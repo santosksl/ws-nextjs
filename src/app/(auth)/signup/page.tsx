@@ -46,7 +46,7 @@ export default function SignUp() {
     
     async function onSubmit(values: UserType) {
         await api.post('/user/signup', values).then(async (res) => {
-            //router.push('/login')
+            router.push('/login')
             toast({
                 className: 'bg-emerald-600',
                 description: res.data.message

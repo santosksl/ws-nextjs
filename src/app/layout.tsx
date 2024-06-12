@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
+import AuthProvider from "@/contexts/AuthContext";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -18,8 +19,10 @@ export default function RootLayout({
     return (
     <html lang="en">
         <body className={`dark ${inter.className}`}>
-            <Toaster />
-            {children}
+            <AuthProvider>
+                <Toaster />
+                {children}
+            </AuthProvider>
         </body>
     </html>
   );
