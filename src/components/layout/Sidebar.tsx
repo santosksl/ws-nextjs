@@ -1,5 +1,5 @@
 "use client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import {
     Dialog,
     DialogContent,
@@ -16,12 +16,15 @@ import {
     FormLabel,
     FormMessage
 } from "@/components/ui/form";
+import { AuthContext } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { useToast } from "../ui/use-toast";
 
 const roomSchema = z.object({
     name: z
@@ -32,30 +35,60 @@ const roomSchema = z.object({
 type RoomType = z.infer<typeof roomSchema>
 
 function DesktopNavLinks() {
+    const { roomsArray, isAuthenticated, user } = useContext(AuthContext)
+    const { toast } = useToast();
+
     const form = useForm<RoomType>({
         resolver: zodResolver(roomSchema),
         defaultValues: {
-            name: ''
+            name: '',
         },
     })
 
     async function onSubmit(values: RoomType) {
-        console.log(values)
+        if (isAuthenticated) {
+            await api.post('/room/create', {
+                name: values.name,
+                ownerId: user?.id
+            }).then(async (res) => {
+                location.reload();
+
+                toast({
+                    className: 'bg-emerald-600',
+                    description: res.data.message
+                })
+            }).catch((error) => {
+                if (error.response) {
+                    toast({
+                        variant: 'destructive',
+                        description: error.response.data.message
+                    })
+                    console.log(error.response)
+                } else if (error.request) {
+                    console.log('Error Request', error.request)
+                } else {
+                    console.error('Error Api', error);
+                }
+            })
+        }
     }
 
     return (
       <ul className="w-[16vw] h-[100vh] flex flex-col bg-neutral-800">
-        <li className="flex gap-x-3 p-5 hover:bg-red-500 cursor-pointer">
-            <Avatar>
-                <AvatarImage src="https://github.com/shadcn.png" />
-                <AvatarFallback>1</AvatarFallback>
-            </Avatar>
+        {   
+            roomsArray.map((room: RoomType, idx) => (
+                <li key={idx} className="flex gap-x-3 p-5 hover:bg-red-500 cursor-pointer">
+                    <Avatar>
+                        <AvatarImage src="https://github.com/shadcn.png" />
+                    </Avatar>
 
-            <span className="font-semibold">
-                Room Name
-            </span>
-        </li>
-
+                    <span className="font-semibold">
+                        { room?.name }
+                    </span>
+                </li>
+            ))                 
+        }
+        
         <li className="fixed bottom-0">
             <Dialog>
                 <DialogTrigger asChild>
