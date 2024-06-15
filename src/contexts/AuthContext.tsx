@@ -2,6 +2,7 @@
 
 import { useToast } from "@/components/ui/use-toast";
 import { api } from "@/lib/api";
+import { jwtDecode } from "jwt-decode";
 import { useRouter } from "next/navigation";
 import { parseCookies, setCookie } from 'nookies';
 import { ReactNode, createContext, useEffect, useState } from "react";
@@ -35,13 +36,19 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     const router = useRouter()
 
     useEffect(() => {
-        const { 'auth.token': token } = parseCookies()
+        async function fetchData() {
+            const { 'auth.token': token } = parseCookies()
 
-        /*if (token) {
-            recoverUserInformation().then(response => {
-              setUser(response.user)
-            })
-        }*/
+            if (token) {
+                const decodedToken = jwtDecode(token);
+                const userId = Number(decodedToken.sub);
+    
+                await api.get(`/user/${userId}`).then((res) => {
+                    setUser(res.data.user[0]);
+                })
+            }
+        }
+        fetchData()
     }, [])
     
     async function logIn({ email, password }: LogInData) {
@@ -49,7 +56,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
             email, password
         }).then(async (res) => {
             setCookie(undefined, 'auth.token', res.data.token, {
-                maxAge: 60 * 60 * 1 // 1 hour
+                maxAge: 60 * 60 * 24 // 1 hour
             })
 
             api.defaults.headers['Authorization'] = `Bearer ${res.data.token}`
