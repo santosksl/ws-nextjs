@@ -3,6 +3,7 @@ import AuthProvider from "@/contexts/AuthContext";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import WebSocketProvider from "@/contexts/WebSocketContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,8 +21,10 @@ export default function RootLayout({
     <html lang="en">
         <body className={`dark ${inter.className}`}>
             <AuthProvider>
-                <Toaster />
-                {children}
+                <WebSocketProvider>
+                    <Toaster />
+                    {children}
+                </WebSocketProvider>
             </AuthProvider>
         </body>
     </html>

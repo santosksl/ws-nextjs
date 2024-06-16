@@ -7,12 +7,13 @@ import { useRouter } from "next/navigation";
 import { destroyCookie, parseCookies, setCookie } from 'nookies';
 import { ReactNode, createContext, useEffect, useState } from "react";
 
-type User = {
+export type User = {
     id: number;
     name: string;
 }
 
-type Rooms = {
+export type Rooms = {
+    id: number;
     name: string;
 }
 
@@ -91,14 +92,15 @@ export default function AuthProvider({ children }: AuthProviderProps) {
             })
 
             api.defaults.headers['Authorization'] = `Bearer ${res.data.token}`
-            setUser(user)
+            setUser(res.data.user[0])
 
             toast({
                 className: 'bg-emerald-600',
                 description: res.data.message
             })
 
-            router.push('/test');
+            router.push('/rooms');
+
         }).catch((error) => {
             if (error.response) {
                 toast({

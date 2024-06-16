@@ -1,3 +1,3 @@
-const ws = new WebSocket('ws://localhost:3333');
+const ws = new WebSocket('ws://localhost:1212');
 
 export { ws };

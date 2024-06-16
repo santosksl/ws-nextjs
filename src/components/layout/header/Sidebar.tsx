@@ -1,5 +1,6 @@
 "use client";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
@@ -16,15 +17,15 @@ import {
     FormLabel,
     FormMessage
 } from "@/components/ui/form";
-import { AuthContext } from "@/contexts/AuthContext";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast";
+import { AuthContext, Rooms } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useContext, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { useToast } from "../ui/use-toast";
 
 const roomSchema = z.object({
     name: z
@@ -37,6 +38,7 @@ type RoomType = z.infer<typeof roomSchema>
 function DesktopNavLinks() {
     const { roomsArray, isAuthenticated, user } = useContext(AuthContext)
     const { toast } = useToast();
+    const router = useRouter();
 
     const form = useForm<RoomType>({
         resolver: zodResolver(roomSchema),
@@ -73,11 +75,19 @@ function DesktopNavLinks() {
         }
     }
 
+    function onClickRedirect(idx: number) {
+        const room: Rooms = roomsArray[idx];
+        
+        if (room) {
+            router.push(`/rooms?id=${room.id}`);
+        }
+    }
+
     return (
       <ul className="w-[16vw] h-[100vh] flex flex-col bg-neutral-800">
         {   
-            roomsArray.map((room: RoomType, idx) => (
-                <li key={idx} className="flex gap-x-3 p-5 hover:bg-red-500 cursor-pointer">
+            roomsArray.map((room: Rooms, idx) => (
+                <li key={idx} className="flex gap-x-3 p-5 hover:bg-blue-700 cursor-pointer" onClick={() => onClickRedirect(idx)}>
                     <Avatar>
                         <AvatarImage src="https://github.com/shadcn.png" />
                     </Avatar>

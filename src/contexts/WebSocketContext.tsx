@@ -1,27 +1,31 @@
-"use client"
-
+"use client";
 import { ws } from "@/socket";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { ReactNode, createContext, useEffect, useState } from "react";
 
-export default function Test() {
-    const [ connected, setConnected ] = useState<boolean>(false);
+interface WebSocketContextType {
+    isConnected: boolean;
+}
+
+interface WebSocketProviderProps {
+    children: ReactNode;
+}
+
+export const WebSocketContext = createContext({} as WebSocketContextType)
+
+export default function WebSocketProvider({ children }: WebSocketProviderProps) {
+    const [isConnected, setIsConnected] = useState<boolean>(false);
 
     useEffect(() => {
-        if (ws.OPEN) {
-            onConnect()
-        }
-
         function onConnect() {            
             console.log(
                 '[WebSockets - Client]: Client connected to the WebSocket server'
             );
-            setConnected(true)
+            setIsConnected(true)
         }
-        
+
         function onDisconnect() {            
             console.log('[WebSockets - Client]: Client disconnected');
-            setConnected(false)
+            setIsConnected(false)
         }
 
         function onError(error: any) {
@@ -32,22 +36,20 @@ export default function Test() {
         ws.addEventListener('close', onDisconnect);
         ws.addEventListener('error', onError);
 
+        if (ws.readyState === WebSocket.OPEN) {
+            onConnect();
+        }
+
         return () => {
             ws.removeEventListener('open', onConnect)
             ws.removeEventListener('close', onDisconnect)
             ws.removeEventListener('error', onError);
-            ws.close();
-
-            console.log('[WebSockets - Client]: Cleanup, closing WebSocket');
         }
     }, [])
-    
+
     return (
-        <div>
-            {connected ? <p>Status: Connected</p> : <p>Status: Disconnected</p>}
-            <button>
-                <Link href="/hello">Click</Link>
-            </button>
-        </div>
+        <WebSocketContext.Provider value={{ isConnected }}>
+            { children }
+        </WebSocketContext.Provider>
     )
 }
