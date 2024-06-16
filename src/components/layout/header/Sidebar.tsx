@@ -27,31 +27,68 @@ import { useContext, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-const roomSchema = z.object({
+const createRoomSchema = z.object({
     name: z
         .string()
         .min(4, { message: 'Name must be at least 4 characters long' }),
 });
 
-type RoomType = z.infer<typeof roomSchema>
+const joinRoomSchema = z.object({
+    roomId:  z.string().transform((val) => parseInt(val, 10)).refine((val) => !isNaN(val), { message: 'Category ID must be a number' })
+});
+
+type CreateRoomType = z.infer<typeof createRoomSchema>
+type JoinRoomType = z.infer<typeof joinRoomSchema>
 
 function DesktopNavLinks() {
     const { roomsArray, isAuthenticated, user } = useContext(AuthContext)
     const { toast } = useToast();
     const router = useRouter();
 
-    const form = useForm<RoomType>({
-        resolver: zodResolver(roomSchema),
+    const createForm = useForm<CreateRoomType>({
+        resolver: zodResolver(createRoomSchema),
         defaultValues: {
             name: '',
         },
     })
 
-    async function onSubmit(values: RoomType) {
+    const joinForm = useForm<JoinRoomType>({
+        resolver: zodResolver(joinRoomSchema),
+    })
+
+    async function onCreateRoom(values: CreateRoomType) {
         if (isAuthenticated) {
             await api.post('/room/create', {
                 name: values.name,
                 ownerId: user?.id
+            }).then(async (res) => {
+                location.reload();
+
+                toast({
+                    className: 'bg-emerald-600',
+                    description: res.data.message
+                })
+            }).catch((error) => {
+                if (error.response) {
+                    toast({
+                        variant: 'destructive',
+                        description: error.response.data.message
+                    })
+                    console.log(error.response)
+                } else if (error.request) {
+                    console.log('Error Request', error.request)
+                } else {
+                    console.error('Error Api', error);
+                }
+            })
+        }
+    }
+
+    async function onJoinRoom(values: JoinRoomType) {
+        if (isAuthenticated) {
+            await api.post('/room/join', {
+                roomId: values.roomId,
+                userId: user?.id
             }).then(async (res) => {
                 location.reload();
 
@@ -99,41 +136,73 @@ function DesktopNavLinks() {
             ))                 
         }
         
-        <li className="fixed bottom-0">
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Button className="w-[16vw] rounded-none">Create Room</Button>
-                </DialogTrigger>
+        <div className="flex flex-col fixed bottom-0">
+            <li>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button className="w-[16vw] rounded-none bg-blue-600 text-white hover:bg-blue-500">Join Room</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Join Room</DialogTitle>
+                        </DialogHeader>
 
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Create Room</DialogTitle>
-                    </DialogHeader>
-
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} method="POST">
-                            <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem className="">
-                                    <FormLabel className="text-white">Name</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="É os guri" {...field} />
-                                    </FormControl>
-                                    <FormMessage className="text-red-500" />
-                                </FormItem>
-                            )}
-                            />
-
-                            <DialogFooter className="mt-5">
-                                <Button className="w-full">Create</Button>
-                            </DialogFooter>
-                        </form>
-                    </Form>
-                </DialogContent>
-            </Dialog>
-        </li>
+                        <Form {...joinForm}>
+                            <form onSubmit={joinForm.handleSubmit(onJoinRoom)}>
+                                <FormField 
+                                control={joinForm.control}
+                                name="roomId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-white">Room ID</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} placeholder="Enter the ID of the room you want to join. Ex: 1" type="number" />
+                                        </FormControl>
+                                        <FormMessage className="text-red-500" />
+                                    </FormItem>
+                                )}
+                                />
+                                <DialogFooter className="mt-5">
+                                    <Button className="w-full">Join</Button>
+                                </DialogFooter>
+                            </form>
+                        </Form>
+                    </DialogContent>
+                </Dialog>
+            </li>
+            <li>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button className="w-[16vw] rounded-none">Create Room</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Create Room</DialogTitle>
+                        </DialogHeader>
+                        <Form {...createForm}>
+                            <form onSubmit={createForm.handleSubmit(onCreateRoom)} method="POST">
+                                <FormField
+                                control={createForm.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-white">Name</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="É os guri" {...field} />
+                                        </FormControl>
+                                        <FormMessage className="text-red-500" />
+                                    </FormItem>
+                                )}
+                                />
+                                <DialogFooter className="mt-5">
+                                    <Button className="w-full">Create</Button>
+                                </DialogFooter>
+                            </form>
+                        </Form>
+                    </DialogContent>
+                </Dialog>
+            </li>
+        </div>
       </ul>
     );
 }
